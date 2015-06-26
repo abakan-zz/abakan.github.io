@@ -1,0 +1,569 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Memory Leaks and Reference Counting &mdash; AhmetBakan.com</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.7.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/ablog.ico"/>
+    <link rel="top" title="AhmetBakan.com" href="../../" />
+  
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  
+  
+  <link rel="stylesheet" href="../../_static/css/font-awesome.css" type="text/css" />
+  
+  <style type="text/css">
+    ul.ablog-archive {list-style: none; overflow: auto; margin-left: 0px}
+    ul.ablog-archive li {float: left; margin-right: 5px; font-size: 80%}
+    ul.post-list-style-disc {list-style-type: disc;}
+    ul.post-list-style-none {list-style-type: none;}
+    ul.post-list-style-circle {list-style-type: circle;}
+  </style>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="../../">AhmetBakan.com</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="memory-leaks-and-reference-counting">
+<h1>Memory Leaks and Reference Counting<a class="headerlink" href="#memory-leaks-and-reference-counting" title="Permalink to this headline">¶</a></h1>
+<p>A while ago, I wrote some C code using Python and NumPy C APIs to parse
+<a class="reference external" href="http://en.wikipedia.org/wiki/multiple sequence alignment">multiple sequence alignment</a> (MSA) files efficiently (available via
+<a class="reference external" href="http://prody.csb.pitt.edu">ProDy</a> function <a class="reference external" href="http://prody.csb.pitt.edu/manual/reference/sequence/msafile.html#prody.sequence.msafile.parseMSA" title="(in ProDy v1.5.1)"><code class="xref py py-func docutils literal"><span class="pre">parseMSA()</span></code></a>). It went all well for
+months (no bug reports from users) until I wanted to see how fast it really is.
+So, I created a 1 GB MSA file by concatenating GPCR family (<a class="reference external" href="http://pfam.sanger.ac.uk/family/7tm_1">7tm_1</a>)
+alignment multiple times and while benchmarking with it, I caught two nasty
+bugs causing <a class="reference external" href="http://en.wikipedia.org/wiki/segmentation fault">segmentation fault</a>.</p>
+</div>
+<div class="section" id="memory-leak">
+<h1>Memory leak<a class="headerlink" href="#memory-leak" title="Permalink to this headline">¶</a></h1>
+<p>The first one was simple to figure out: a huge memory leak that showed itself
+when simply analyzing the Python process with <strong class="program">top</strong> (i.e.
+<code class="docutils literal"><span class="pre">top</span> <span class="pre">-p</span> <span class="pre">$(pgrep</span> <span class="pre">-d','</span> <span class="pre">python)</span></code>). <a class="reference external" href="http://prody.csb.pitt.edu/manual/reference/sequence/msafile.html#prody.sequence.msafile.parseMSA" title="(in ProDy v1.5.1)"><code class="xref py py-func docutils literal"><span class="pre">parseMSA()</span></code></a>
+function returns the alignment data in a NumPy <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.9)"><code class="xref py py-class docutils literal"><span class="pre">ndarray</span></code></a> with
+character data type. When the array was deallocated, data buffer would remain
+in the memory, and it would become a visible problem when dealing with 1 GB
+file.</p>
+<div class="section" id="problematic-code">
+<h2>Problematic code<a class="headerlink" href="#problematic-code" title="Permalink to this headline">¶</a></h2>
+<p>To parse alignment efficiently, I simply allocate memory large enough to store
+the entire file. Once data is parsed, I use <code class="docutils literal"><span class="pre">realloc</span></code> to free the unused
+portion and return the buffer in a NumPy <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.9)"><code class="xref py py-class docutils literal"><span class="pre">ndarray</span></code></a> to the user,
+as partly shown here:</p>
+<div class="highlight-c"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></div></td><td class="code"><div class="highlight"><pre><span class="c1">// msaio.c</span>
+<span class="k">static</span> <span class="n">PyObject</span> <span class="o">*</span><span class="nf">parseSelex</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">;</span>
+    <span class="kt">long</span> <span class="n">filesize</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">PyArg_ParseTuple</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s">&quot;si&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">filename</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">filesize</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+
+    <span class="kt">char</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">filesize</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">PyErr_NoMemory</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="c1">// ..., parsing, indexing, etc.</span>
+
+    <span class="c1">// `index` is the number of chars copied to `data`</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">realloc</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">index</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+
+    <span class="c1">// determine the shape of 2D array</span>
+    <span class="n">npy_intp</span> <span class="n">dims</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">index</span> <span class="o">/</span> <span class="n">seqlen</span><span class="p">,</span> <span class="n">seqlen</span><span class="p">};</span>
+    <span class="c1">// creates an array from the data, with desired shape</span>
+    <span class="n">PyObject</span> <span class="o">*</span><span class="n">msa</span> <span class="o">=</span> <span class="n">PyArray_SimpleNewFromData</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">PyArray_CHAR</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+
+    <span class="c1">// return `msa` ndarray and list/dict of labels</span>
+<span class="p">}</span>
+</pre></div>
+</td></tr></table></div>
+<p>And the Python code using it looks like:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">from</span> <span class="nn">msaio</span> <span class="kn">import</span> <span class="n">parseSelex</span>
+
+<span class="n">filesize</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="n">msa</span><span class="p">,</span> <span class="o">...</span> <span class="o">=</span> <span class="n">parseSelex</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">filesize</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<p>The problem with this is that arrays created with
+<a class="reference external" href="http://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#c.PyArray_SimpleNewFromData" title="(in NumPy v1.9)"><code class="xref c c-func docutils literal"><span class="pre">PyArray_SimpleNewFromData()</span></code></a> <em>does not own</em> the data. It <em>is</em> noted in
+its documentation that user is responsible for freeing the memory when the
+<a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.9)"><code class="xref py py-class docutils literal"><span class="pre">ndarray</span></code></a> is deallocated, but I guess I was rushing to have a
+working piece of code and overlooked it. Several unit tests running on small
+files did not let this issue appear either.</p>
+</div>
+<div class="section" id="alternative-implementation">
+<h2>Alternative implementation<a class="headerlink" href="#alternative-implementation" title="Permalink to this headline">¶</a></h2>
+<p>Then I spent an entire morning to find a solution, but there was no way to
+convince the <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.9)"><code class="xref py py-class docutils literal"><span class="pre">ndarray</span></code></a> that it owns the data entirely and
+potential solutions on the internet led to writing more than a few lines of
+code.</p>
+<p>Alternatively, using Python to instantiate an <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v1.9)"><code class="xref py py-class docutils literal"><span class="pre">ndarray</span></code></a> large
+enough to store the file and then working on the data buffer owned by that
+array solved the issue with minimal changes in the code:</p>
+<div class="highlight-c"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23</pre></div></td><td class="code"><div class="highlight"><pre><span class="c1">// msaio.c</span>
+<span class="k">static</span> <span class="n">PyObject</span> <span class="o">*</span><span class="nf">parseSelex</span><span class="p">(</span><span class="n">PyObject</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">PyObject</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">;</span>
+    <span class="n">PyArrayObject</span> <span class="o">*</span><span class="n">msa</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">PyArg_ParseTuple</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="s">&quot;sO&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">filename</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">msa</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+
+    <span class="c1">// get a pointer to the character buffer</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">PyArray_DATA</span><span class="p">(</span><span class="n">msa</span><span class="p">);</span>
+
+    <span class="c1">// ..., parsing, indexing, etc.</span>
+
+    <span class="c1">// determine new size</span>
+    <span class="n">npy_intp</span> <span class="n">dims</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">index</span> <span class="o">/</span> <span class="n">seqlen</span><span class="p">,</span> <span class="n">seqlen</span><span class="p">};</span>
+    <span class="n">PyArray_Dims</span> <span class="n">arr_dims</span><span class="p">;</span>
+    <span class="n">arr_dims</span><span class="p">.</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">dims</span><span class="p">;</span>
+    <span class="n">arr_dims</span><span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+
+    <span class="c1">// resize as follows to free unused memory</span>
+    <span class="n">PyArray_Resize</span><span class="p">(</span><span class="n">msa</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">arr_dims</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">NPY_CORDER</span><span class="p">);</span>
+
+    <span class="c1">// return `msa` ndarray and list/dict of labels</span>
+<span class="p">}</span>
+</pre></div>
+</td></tr></table></div>
+<p>And again, the code using it now looks like:</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">empty</span>
+<span class="kn">from</span> <span class="nn">msaio</span> <span class="kn">import</span> <span class="n">parseSelex</span>
+
+<span class="n">msa</span> <span class="o">=</span> <span class="n">empty</span><span class="p">(</span><span class="n">filesize</span><span class="p">)</span>
+<span class="n">msa</span><span class="p">,</span> <span class="o">...</span> <span class="o">=</span> <span class="n">parseSelex</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">msa</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<p>This was the perfect <a class="reference external" href="https://github.com/abakan/ProDy/commit/0c9c7d3e657c1383e6d1aa89f68ddde0eb2fe5e5">fix</a> with minimum changes in the code!</p>
+</div>
+</div>
+<div class="section" id="reference-counting">
+<h1>Reference counting<a class="headerlink" href="#reference-counting" title="Permalink to this headline">¶</a></h1>
+<p>Memory leak was gone, but segmentation fault problem persisted. This time, it
+was related to reference counting. In particular, it was due to
+<a class="reference external" href="http://docs.python.org/c-api/list.html#c.PyList_SetItem" title="(in Python v2.7)"><code class="xref c c-func docutils literal"><span class="pre">PyList_SetItem()</span></code></a> stealing reference counts. Once culprit was
+identified, the <a class="reference external" href="https://github.com/abakan/ProDy/commit/452d056ba388303dc17128ca26febded23c0da70">fix</a> was simply adding a line of <a class="reference external" href="http://docs.python.org/c-api/refcounting.html#c.Py_INCREF" title="(in Python v2.7)"><code class="xref c c-func docutils literal"><span class="pre">Py_INCREF()</span></code></a>.</p>
+<p>The problem in this case emerged only when MSA file contained sequences with
+same label.</p>
+</div>
+<div class="section" id="take-home-message">
+<h1>Take home message<a class="headerlink" href="#take-home-message" title="Permalink to this headline">¶</a></h1>
+<p>Keep calm and carry on <em>testing</em> for the expected and unexpected. And, read C
+API documentations carefully. There are more caveats in C APIs than there is in
+Python APIs. It looks like it will be the best to rely entirely on NumPy C API
+functions/macros rather then mixing it with C memory management.</p>
+</div>
+<div class="section" id="msa-parser-performance">
+<h1>MSA parser performance<a class="headerlink" href="#msa-parser-performance" title="Permalink to this headline">¶</a></h1>
+<p>So, how fast is the parser? I parsed 1 GB data in 1.3s. At around 700 MB/s data
+input rate, it may be as fast as it gets. Here is an example on how to use MSA
+parser and classes in <a class="reference external" href="http://prody.csb.pitt.edu">ProDy</a> and <a class="reference external" href="http://prody.csb.pitt.edu/evol">Evol</a>:</p>
+<div class="highlight-ipython"><div class="highlight"><pre><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">prody</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="gp">In [2]: </span><span class="n">fetchPfamMSA</span><span class="p">(</span><span class="s">&#39;7tm_1&#39;</span><span class="p">,</span> <span class="n">alignment</span><span class="o">=</span><span class="s">&#39;seed&#39;</span><span class="p">)</span>
+<span class="gh">Out[2]: </span><span class="go">&#39;7tm_1_seed.sth&#39;</span>
+
+<span class="gp">In [3]: </span><span class="n">msa</span> <span class="o">=</span> <span class="n">parseMSA</span><span class="p">(</span><span class="s">&#39;7tm_1_seed.sth&#39;</span><span class="p">)</span>
+
+<span class="gp">In [4]: </span><span class="n">msa</span><span class="p">[</span><span class="s">&#39;5HT1A_HUMAN&#39;</span><span class="p">]</span>  <span class="c"># sequences are indexed during parsing</span>
+<span class="gh">Out[4]: </span><span class="go">&lt;Sequence: 5HT1A_HUMAN (7tm_1_seed[21]; length 434; 348 residues and 86 gaps)&gt;</span>
+</pre></div>
+</div>
+</div>
+
+  <div class="section">
+  
+    
+
+
+<div class="section">
+  <span style="float: left;">
+  
+  
+  <a href="../using-travis-ci-for-testing/">
+    <i class="fa fa-arrow-circle-left"></i>
+    Using Travis-CI for Testing
+  </a>
+  
+  </span>
+  <span>&nbsp;</span>
+  <span style="float: right;">
+  
+  
+  <a href="../fast-parsing-and-memory-efficiency/">
+    Fast Parsing and Memory Efficiency
+    <i class="fa fa-arrow-circle-right"></i>
+  </a>
+  </span>
+  
+</div>
+
+  
+  
+    <div class="section">
+    <h2>Comments</h2>
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'ahmetbakan'; // required: replace example with your forum shortname
+        var disqus_identifier = '/blog/memory-leaks-and-reference-counting/';
+        var disqus_title = 'Memory Leaks and Reference Counting';
+        var disqus_url = 'http://ahmetbakan.com/blog/memory-leaks-and-reference-counting';
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </div>
+  
+  </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../">
+    <img class="logo" src="../../_static/ahmet.jpg" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+  
+  
+  <h2>
+  
+  <i class="fa fa-calendar"></i>
+    Oct 10, 2013
+  
+  </h2>
+
+  <ul>
+    
+
+  
+
+  
+
+  
+
+  
+  <li><i class="fa-fw fa fa-folder-open"></i>
+    
+      
+      <a href="../category/prody/">ProDy</a>
+      
+    </li>
+  
+
+  
+  <li><i class="fa-fw fa fa-tags"></i>
+      
+    
+      
+      <a href="../tag/numpy/">NumPy</a>,
+      
+    
+      
+      <a href="../tag/prody/">ProDy</a>,
+      
+    
+      
+      <a href="../tag/python/">Python</a>,
+      
+    
+      
+      <a href="../tag/evol/">Evol</a>,
+      
+    
+      
+      <a href="../tag/c/">C</a>
+      
+    </li>
+  
+  
+  <li>
+    <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'ahmetbakan'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+    </script>
+    <i class="fa-fw fa fa-comments"></i>
+    <a href="#disqus_thread" data-disqus-identifier="/blog/memory-leaks-and-reference-counting/"> </a>
+  </li>
+  
+  </ul>
+
+
+
+  <h3><a href="../tag/">Tags</a></h3>
+  <style type="text/css">
+    ul.ablog-cloud {list-style: none; overflow: auto;}
+    ul.ablog-cloud li {float: left; height: 20pt; line-height: 18pt; margin-right: 5px;}
+    ul.ablog-cloud a {text-decoration: none; vertical-align: middle;}
+    li.ablog-cloud-1{font-size: 80%;}
+    li.ablog-cloud-2{font-size: 95%;}
+    li.ablog-cloud-3{font-size: 110%;}
+    li.ablog-cloud-4{font-size: 125%;}
+    li.ablog-cloud-5{font-size: 140%;}
+  </style>
+  <ul class="ablog-cloud">
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/c/">C</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/django/">Django</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/drugui/">DruGUI</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/druggability/">Druggability</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/evol/">Evol</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/github/">GitHub</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/ipython/">IPython</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/matplotlib/">Matplotlib</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/meze/">Meze</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/mezzanine/">Mezzanine</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/namd/">NAMD</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-2">
+        <a href="../tag/numpy/">NumPy</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/powerpoint/">PowerPoint</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-2">
+        <a href="../tag/prody/">ProDy</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-5">
+        <a href="../tag/python/">Python</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/sphinx/">Sphinx</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/testing/">Testing</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/vmd/">VMD</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/napi/">napi</a></li>
+      
+    
+  </ul>
+
+  <h3><a href="../category/">Categories</a></h3>
+  <ul>
+  
+    
+    <li><a href="../category/meze/">Meze (2)</a></li>
+    
+  
+    
+    <li><a href="../category/prody/">ProDy (3)</a></li>
+    
+  
+    
+    <li><a href="../category/napi/">napi (1)</a></li>
+    
+  
+  </ul>
+
+  <h3><a href="../archive/">Archives</a></h3>
+  <ul>
+  
+    
+    <li><a href="../2013/">2013 (8)</a></li>
+    
+  
+  </ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search/" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013-2015, Ahmet Bakan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="../../_sources/blog/memory-leaks-and-reference-counting.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

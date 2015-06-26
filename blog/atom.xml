@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title type="text">Ahmet's blog</title>
+  <id>http://ahmetbakan.com/blog/atom.xml</id>
+  <updated>2013-11-11T00:00:00Z</updated>
+  <link href="http://ahmetbakan.com" />
+  <link href="http://ahmetbakan.com/blog/atom.xml" rel="self" />
+  <generator uri="http://ablog.readthedocs.org" version="0.7.1">ABlog</generator>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Array Operations with Napi</title>
+    <id>http://ahmetbakan.com/blog/array-operations-with-napi/</id>
+    <updated>2013-11-11T00:00:00Z</updated>
+    <published>2013-11-11T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/array-operations-with-napi/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;If there is one thing that I don&amp;#8217;t like about doing numerical analysis using
+&lt;a class=&quot;reference external&quot; href=&quot;http://python.org&quot;&gt;Python&lt;/a&gt; and &lt;a class=&quot;reference external&quot; href=&quot;http://www.numpy.org&quot;&gt;NumPy&lt;/a&gt; is that expressions of chained comparisons and logical
+operations containing arrays do not work:&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Fast Parsing and Memory Efficiency</title>
+    <id>http://ahmetbakan.com/blog/fast-parsing-and-memory-efficiency/</id>
+    <updated>2013-11-10T00:00:00Z</updated>
+    <published>2013-11-10T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/fast-parsing-and-memory-efficiency/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;When designing &lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu&quot;&gt;ProDy&lt;/a&gt; PDB parser (&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu/manual/reference/proteins/pdbfile.html#prody.proteins.pdbfile.parsePDB&quot; title=&quot;(in ProDy v1.5.1)&quot;&gt;&lt;code class=&quot;xref py py-func docutils literal&quot;&gt;&lt;span class=&quot;pre&quot;&gt;parsePDB()&lt;/span&gt;&lt;/code&gt;&lt;/a&gt;) and
+&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu/manual/reference/atomic/index.html#module-prody.atomic&quot; title=&quot;(in ProDy v1.5.1)&quot;&gt;&lt;code class=&quot;xref py py-mod docutils literal&quot;&gt;&lt;span class=&quot;pre&quot;&gt;atomic&lt;/span&gt;&lt;/code&gt;&lt;/a&gt; classes, I primarily optimized the code for speed of
+parsing, and memory usage was of lower importance. In many extreme cases
+involving processing 100s of &lt;a class=&quot;reference external&quot; href=&quot;http://www.pdb.org/&quot;&gt;PDB&lt;/a&gt; structures (~10K atoms on average) in memory,
+ProDy has done fine. This lasted until some users pushed it to the limits
+recently. Their use case involved manipulating multiple trajectory frames
+containing ~160K atoms. The bottleneck was ProDy&amp;#8217;s memory usage, and their
+application kept crashing.&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Memory Leaks and Reference Counting</title>
+    <id>http://ahmetbakan.com/blog/memory-leaks-and-reference-counting/</id>
+    <updated>2013-10-10T00:00:00Z</updated>
+    <published>2013-10-10T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/memory-leaks-and-reference-counting/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;A while ago, I wrote some C code using Python and NumPy C APIs to parse
+&lt;a class=&quot;reference external&quot; href=&quot;http://en.wikipedia.org/wiki/multiple sequence alignment&quot;&gt;multiple sequence alignment&lt;/a&gt; (MSA) files efficiently (available via
+&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu&quot;&gt;ProDy&lt;/a&gt; function &lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu/manual/reference/sequence/msafile.html#prody.sequence.msafile.parseMSA&quot; title=&quot;(in ProDy v1.5.1)&quot;&gt;&lt;code class=&quot;xref py py-func docutils literal&quot;&gt;&lt;span class=&quot;pre&quot;&gt;parseMSA()&lt;/span&gt;&lt;/code&gt;&lt;/a&gt;). It went all well for
+months (no bug reports from users) until I wanted to see how fast it really is.
+So, I created a 1 GB MSA file by concatenating GPCR family (&lt;a class=&quot;reference external&quot; href=&quot;http://pfam.sanger.ac.uk/family/7tm_1&quot;&gt;7tm_1&lt;/a&gt;)
+alignment multiple times and while benchmarking with it, I caught two nasty
+bugs causing &lt;a class=&quot;reference external&quot; href=&quot;http://en.wikipedia.org/wiki/segmentation fault&quot;&gt;segmentation fault&lt;/a&gt;.&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Using Travis-CI for Testing</title>
+    <id>http://ahmetbakan.com/blog/using-travis-ci-for-testing/</id>
+    <updated>2013-07-31T00:00:00Z</updated>
+    <published>2013-07-31T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/using-travis-ci-for-testing/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;I too have the following cool image on my &lt;a class=&quot;reference external&quot; href=&quot;https://github.com/abakan/ProDy&quot;&gt;ProDy repository&lt;/a&gt; on &lt;a class=&quot;reference external&quot; href=&quot;https://github.com&quot;&gt;GitHub&lt;/a&gt;:&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">DruGUI - Druggability Suite</title>
+    <id>http://ahmetbakan.com/blog/drugui-druggability-suite/</id>
+    <updated>2013-07-17T00:00:00Z</updated>
+    <published>2013-07-17T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/drugui-druggability-suite/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;Recently, we had a hands-on &lt;a class=&quot;reference external&quot; href=&quot;http://www.ks.uiuc.edu/Training/Workshop/Pittsburgh2013&quot;&gt;Computational Biophysics Workshop&lt;/a&gt; in Pittsburgh.
+First three days were on &lt;a class=&quot;reference external&quot; href=&quot;http://www.ks.uiuc.edu/Research/namd/&quot;&gt;NAMD&lt;/a&gt;/&lt;a class=&quot;reference external&quot; href=&quot;http://www.ks.uiuc.edu/Research/vmd/&quot;&gt;VMD&lt;/a&gt;, and the last two were on
+&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu&quot;&gt;ProDy&lt;/a&gt;/&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu/nmwiz&quot;&gt;NMWiz&lt;/a&gt;, and a new software called &lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu/drugui&quot;&gt;DruGUI&lt;/a&gt;.&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">HQ Images from PowerPoint Slides</title>
+    <id>http://ahmetbakan.com/blog/hq-images-from-powerpoint-slides/</id>
+    <updated>2013-07-16T00:00:00Z</updated>
+    <published>2013-07-16T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/hq-images-from-powerpoint-slides/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;I use PowerPoint to collate figures for publications and make &lt;code class=&quot;file docutils literal&quot;&gt;&lt;span class=&quot;pre&quot;&gt;.png&lt;/span&gt;&lt;/code&gt; or
+&lt;code class=&quot;file docutils literal&quot;&gt;&lt;span class=&quot;pre&quot;&gt;.tiff&lt;/span&gt;&lt;/code&gt; files.  Default settings produce output at 96 dpi, but with a
+little hack it is possible to save 300 dpi images and satisfy graphics quality
+requirements of most journals.&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Running Python via Meze</title>
+    <id>http://ahmetbakan.com/blog/running-python-via-meze/</id>
+    <updated>2013-07-12T00:00:00Z</updated>
+    <published>2013-07-12T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/running-python-via-meze/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;&lt;a class=&quot;reference external&quot; href=&quot;http://matplotlib.org/sampledoc/ipython_directive.html&quot;&gt;IPython directive&lt;/a&gt; is a very handy &lt;a class=&quot;reference external&quot; href=&quot;http://sphinx-doc.org&quot;&gt;Sphinx&lt;/a&gt; extension for writing tutorials
+and documentation. In fact, I used it extensively when developing &lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu&quot;&gt;ProDy&lt;/a&gt;
+tutorials. With this directive, you just let Sphinx run a piece of code and
+incorporate output into the output HTML. It even allows for making plots and
+saving image files automatically. This post shows how to use it via &lt;a class=&quot;reference external&quot; href=&quot;https://github.com/abakan/mezzanine-meze&quot;&gt;Meze&lt;/a&gt;.&lt;/p&gt;
+</content>
+  </entry>
+  <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
+    <title type="text">Meze for Mezzanine</title>
+    <id>http://ahmetbakan.com/blog/meze-for-mezzanine/</id>
+    <updated>2013-06-10T00:00:00Z</updated>
+    <published>2013-06-10T00:00:00Z</published>
+    <link href="http://ahmetbakan.com/blog/meze-for-mezzanine/" />
+    <author>
+      <name></name>
+    </author>
+    <content type="html">&lt;p&gt;I have been using &lt;a class=&quot;reference external&quot; href=&quot;http://sphinx-doc.org&quot;&gt;Sphinx&lt;/a&gt; for documenting my open-source Python packages and
+also maintaining a personal site. It is a great tool that handles code
+highlighting, cross-referencing, and hierarchical structures, and conversion of
+content in &lt;a class=&quot;reference external&quot; href=&quot;http://docutils.sourceforge.net/rst.html&quot;&gt;reStructuredText&lt;/a&gt; to HTML, PDF, and other formats. For documenting
+&lt;a class=&quot;reference external&quot; href=&quot;http://prody.csb.pitt.edu&quot;&gt;ProDy&lt;/a&gt; package, it has been extremely useful, but for my personal site, I
+thought, time has come for a change.&lt;/p&gt;
+</content>
+  </entry>
+</feed>

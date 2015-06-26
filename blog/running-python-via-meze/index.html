@@ -1,0 +1,457 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running Python via Meze &mdash; AhmetBakan.com</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.7.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="shortcut icon" href="../../_static/ablog.ico"/>
+    <link rel="top" title="AhmetBakan.com" href="../../" />
+  
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  
+  
+  <link rel="stylesheet" href="../../_static/css/font-awesome.css" type="text/css" />
+  
+  <style type="text/css">
+    ul.ablog-archive {list-style: none; overflow: auto; margin-left: 0px}
+    ul.ablog-archive li {float: left; margin-right: 5px; font-size: 80%}
+    ul.post-list-style-disc {list-style-type: disc;}
+    ul.post-list-style-none {list-style-type: none;}
+    ul.post-list-style-circle {list-style-type: circle;}
+  </style>
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="nav-item nav-item-0"><a href="../../">AhmetBakan.com</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="running-python-via-meze">
+<h1>Running Python via Meze<a class="headerlink" href="#running-python-via-meze" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://matplotlib.org/sampledoc/ipython_directive.html">IPython directive</a> is a very handy <a class="reference external" href="http://sphinx-doc.org">Sphinx</a> extension for writing tutorials
+and documentation. In fact, I used it extensively when developing <a class="reference external" href="http://prody.csb.pitt.edu">ProDy</a>
+tutorials. With this directive, you just let Sphinx run a piece of code and
+incorporate output into the output HTML. It even allows for making plots and
+saving image files automatically. This post shows how to use it via <a class="reference external" href="https://github.com/abakan/mezzanine-meze">Meze</a>.</p>
+<div class="section" id="id1">
+<h2>IPython directive<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>To illustrate this, let&#8217;s generate a sample of random numbers using
+<a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.normal.html#numpy.random.normal" title="(in NumPy v1.9)"><code class="xref py py-func docutils literal"><span class="pre">normal()</span></code></a> function and make a histogram:</p>
+<div class="highlight-ipython"><div class="highlight"><pre><span class="gp">In [1]: </span><span class="kn">from</span> <span class="nn">pylab</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="gp">In [2]: </span><span class="kn">from</span> <span class="nn">numpy.random</span> <span class="kn">import</span> <span class="n">normal</span>
+
+<span class="gp">In [3]: </span><span class="n">sample</span> <span class="o">=</span> <span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+
+<span class="gp">In [4]: </span><span class="n">figure</span><span class="p">();</span>
+
+<span class="gp">In [5]: </span><span class="n">hist</span><span class="p">(</span><span class="n">sample</span><span class="p">);</span>
+
+<span class="gp">In [6]: </span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Normal Distribution (sample size = 10000)&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<a class="reference internal image-reference" href="../../_images/sample_normal_distribution.png"><img alt="../../_images/sample_normal_distribution.png" src="../../_images/sample_normal_distribution.png" style="width: 4in;" /></a>
+<p>Here is the source for the example:</p>
+<div class="highlight-rst"><div class="highlight"><pre><span class="p">..</span> <span class="ow">ipython</span><span class="p">::</span>
+
+   In [1]: from pylab import *
+
+   In [1]: from numpy.random import normal
+
+   In [1]: sample = normal(size=10000)
+
+   In [1]: figure();
+
+   In [1]: hist(sample);
+
+   @savefig sample_normal_distribution.png width=4in
+   In [1]: title(&#39;Normal Distribution (sample size = 10000)&#39;);
+</pre></div>
+</div>
+<p>Note that you need to leave a blank line between each input line in the
+directive. Semicolons following <a class="reference external" href="http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.figure" title="(in Matplotlib v1.4.3)"><code class="xref py py-func docutils literal"><span class="pre">figure()</span></code></a>,
+<a class="reference external" href="http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.hist" title="(in Matplotlib v1.4.3)"><code class="xref py py-func docutils literal"><span class="pre">hist()</span></code></a>, and <a class="reference external" href="http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.title" title="(in Matplotlib v1.4.3)"><code class="xref py py-func docutils literal"><span class="pre">title()</span></code></a> suppress
+the outputs of these functions.</p>
+</div>
+<div class="section" id="sphinx-configuration">
+<h2>Sphinx configuration<a class="headerlink" href="#sphinx-configuration" title="Permalink to this headline">¶</a></h2>
+<p>To start using IPython directive, you need to install <a class="reference external" href="http://matplotlib.org">Matplotlib</a>, and append
+the following lines to your <code class="docutils literal"><span class="pre">SPHINX_CONF</span></code> variable in <a class="reference external" href="http://mezzanine.jupo.org">Mezzanine</a>
+<code class="file docutils literal"><span class="pre">settings.py</span></code> file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">SPHINX_CONF</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s"># IPython extensions come with Matplotlib</span>
+<span class="s">extensions = [</span>
+<span class="s">    ...</span>
+<span class="s">    &#39;matplotlib.sphinxext.ipython_console_highlighting&#39;,</span>
+<span class="s">    &#39;matplotlib.sphinxext.ipython_directive&#39;]</span>
+
+<span class="s"># folder for saving figures</span>
+<span class="s">ipython_savefig_dir = &#39;/path/to/public_html/static/media/uploads&#39;</span>
+<span class="s">&quot;&quot;&quot;</span>
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">ipython_savefig_dir</span></code> should point to a folder visible from the web. I have
+set it to the folder that <cite>Mezzanine</cite> stores uploaded files, so that I will be
+able to remove files via the admin interface when needed.</p>
+</div>
+<div class="section" id="security-risks">
+<h2>Security risks<a class="headerlink" href="#security-risks" title="Permalink to this headline">¶</a></h2>
+<p>Needless to say, ability to run Python on your server can have severe
+consequences. For a personal blog with a single user, like this one, it should
+be safe. Implementing permissions to use <a class="reference external" href="https://github.com/abakan/mezzanine-meze">Meze</a>, however, will be a good
+addition in a future release for multi-user blogs. Until then, post
+responsibly.</p>
+</div>
+</div>
+
+  <div class="section">
+  
+    
+
+
+<div class="section">
+  <span style="float: left;">
+  
+  
+  <a href="../meze-for-mezzanine/">
+    <i class="fa fa-arrow-circle-left"></i>
+    Meze for Mezzanine
+  </a>
+  
+  </span>
+  <span>&nbsp;</span>
+  <span style="float: right;">
+  
+  
+  <a href="../hq-images-from-powerpoint-slides/">
+    HQ Images from PowerPoint Slides
+    <i class="fa fa-arrow-circle-right"></i>
+  </a>
+  </span>
+  
+</div>
+
+  
+  
+    <div class="section">
+    <h2>Comments</h2>
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'ahmetbakan'; // required: replace example with your forum shortname
+        var disqus_identifier = '/blog/running-python-via-meze/';
+        var disqus_title = 'Running Python via Meze';
+        var disqus_url = 'http://ahmetbakan.com/blog/running-python-via-meze';
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </div>
+  
+  </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../">
+    <img class="logo" src="../../_static/ahmet.jpg" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+  
+  
+  <h2>
+  
+  <i class="fa fa-calendar"></i>
+    Jul 12, 2013
+  
+  </h2>
+
+  <ul>
+    
+
+  
+
+  
+
+  
+
+  
+  <li><i class="fa-fw fa fa-folder-open"></i>
+    
+      
+      <a href="../category/meze/">Meze</a>
+      
+    </li>
+  
+
+  
+  <li><i class="fa-fw fa fa-tags"></i>
+      
+    
+      
+      <a href="../tag/django/">Django</a>,
+      
+    
+      
+      <a href="../tag/meze/">Meze</a>,
+      
+    
+      
+      <a href="../tag/mezzanine/">Mezzanine</a>,
+      
+    
+      
+      <a href="../tag/python/">Python</a>,
+      
+    
+      
+      <a href="../tag/sphinx/">Sphinx</a>,
+      
+    
+      
+      <a href="../tag/ipython/">IPython</a>,
+      
+    
+      
+      <a href="../tag/matplotlib/">Matplotlib</a>
+      
+    </li>
+  
+  
+  <li>
+    <script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'ahmetbakan'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function () {
+    var s = document.createElement('script'); s.async = true;
+    s.type = 'text/javascript';
+    s.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+    (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
+    }());
+    </script>
+    <i class="fa-fw fa fa-comments"></i>
+    <a href="#disqus_thread" data-disqus-identifier="/blog/running-python-via-meze/"> </a>
+  </li>
+  
+  </ul>
+
+
+
+  <h3><a href="../tag/">Tags</a></h3>
+  <style type="text/css">
+    ul.ablog-cloud {list-style: none; overflow: auto;}
+    ul.ablog-cloud li {float: left; height: 20pt; line-height: 18pt; margin-right: 5px;}
+    ul.ablog-cloud a {text-decoration: none; vertical-align: middle;}
+    li.ablog-cloud-1{font-size: 80%;}
+    li.ablog-cloud-2{font-size: 95%;}
+    li.ablog-cloud-3{font-size: 110%;}
+    li.ablog-cloud-4{font-size: 125%;}
+    li.ablog-cloud-5{font-size: 140%;}
+  </style>
+  <ul class="ablog-cloud">
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/c/">C</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/django/">Django</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/drugui/">DruGUI</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/druggability/">Druggability</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/evol/">Evol</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/github/">GitHub</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/ipython/">IPython</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/matplotlib/">Matplotlib</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/meze/">Meze</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/mezzanine/">Mezzanine</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/namd/">NAMD</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-2">
+        <a href="../tag/numpy/">NumPy</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/powerpoint/">PowerPoint</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-2">
+        <a href="../tag/prody/">ProDy</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-5">
+        <a href="../tag/python/">Python</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/sphinx/">Sphinx</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/testing/">Testing</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/vmd/">VMD</a></li>
+      
+    
+      
+      <li class="ablog-cloud ablog-cloud-1">
+        <a href="../tag/napi/">napi</a></li>
+      
+    
+  </ul>
+
+  <h3><a href="../category/">Categories</a></h3>
+  <ul>
+  
+    
+    <li><a href="../category/meze/">Meze (2)</a></li>
+    
+  
+    
+    <li><a href="../category/prody/">ProDy (3)</a></li>
+    
+  
+    
+    <li><a href="../category/napi/">napi (1)</a></li>
+    
+  
+  </ul>
+
+  <h3><a href="../archive/">Archives</a></h3>
+  <ul>
+  
+    
+    <li><a href="../2013/">2013 (8)</a></li>
+    
+  
+  </ul>
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search/" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013-2015, Ahmet Bakan.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="../../_sources/blog/running-python-via-meze.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
