@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.7.1',
+        VERSION:     '0.8.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '',
         HAS_SOURCE:  true
@@ -37,19 +37,14 @@
   <style type="text/css">
     ul.ablog-archive {list-style: none; overflow: auto; margin-left: 0px}
     ul.ablog-archive li {float: left; margin-right: 5px; font-size: 80%}
-    ul.post-list-style-disc {list-style-type: disc;}
-    ul.post-list-style-none {list-style-type: none;}
-    ul.post-list-style-circle {list-style-type: circle;}
+    ul.postlist a {font-style: italic;}
+    ul.postlist-style-disc {list-style-type: disc;}
+    ul.postlist-style-none {list-style-type: none;}
+    ul.postlist-style-circle {list-style-type: circle;}
   </style>
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="nav-item nav-item-0"><a href="#">AhmetBakan.com</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -72,15 +67,15 @@ packages that I developed for analysis, simulation, and visualization at
 <h2>Blog Posts<a class="headerlink" href="#blog-posts" title="Permalink to this headline">¶</a></h2>
 <p>More often than here, I post about blogging at
 <a class="reference external" href="http://ablog.readthedocs.org/">ABlog</a> ;)</p>
-<ul class="post-list-style-none simple">
-<li>Nov 11, 2013 - <a class="reference internal" href="blog/array-operations-with-napi/"><em>Array Operations with Napi</em></a></li>
-<li>Nov 10, 2013 - <a class="reference internal" href="blog/fast-parsing-and-memory-efficiency/"><em>Fast Parsing and Memory Efficiency</em></a></li>
-<li>Oct 10, 2013 - <a class="reference internal" href="blog/memory-leaks-and-reference-counting/"><em>Memory Leaks and Reference Counting</em></a></li>
-<li>Jul 31, 2013 - <a class="reference internal" href="blog/using-travis-ci-for-testing/"><em>Using Travis-CI for Testing</em></a></li>
-<li>Jul 17, 2013 - <a class="reference internal" href="blog/drugui-druggability-suite/"><em>DruGUI - Druggability Suite</em></a></li>
-<li>Jul 16, 2013 - <a class="reference internal" href="blog/hq-images-from-powerpoint-slides/"><em>HQ Images from PowerPoint Slides</em></a></li>
-<li>Jul 12, 2013 - <a class="reference internal" href="blog/running-python-via-meze/"><em>Running Python via Meze</em></a></li>
-<li>Jun 10, 2013 - <a class="reference internal" href="blog/meze-for-mezzanine/"><em>Meze for Mezzanine</em></a></li>
+<ul class="postlist-style-none postlist simple">
+<li>Nov 11, 2013 - <a class="reference internal" href="blog/array-operations-with-napi/">Array Operations with Napi</a></li>
+<li>Nov 10, 2013 - <a class="reference internal" href="blog/fast-parsing-and-memory-efficiency/">Fast Parsing and Memory Efficiency</a></li>
+<li>Oct 10, 2013 - <a class="reference internal" href="blog/memory-leaks-and-reference-counting/">Memory Leaks and Reference Counting</a></li>
+<li>Jul 31, 2013 - <a class="reference internal" href="blog/using-travis-ci-for-testing/">Using Travis-CI for Testing</a></li>
+<li>Jul 17, 2013 - <a class="reference internal" href="blog/drugui-druggability-suite/">DruGUI - Druggability Suite</a></li>
+<li>Jul 16, 2013 - <a class="reference internal" href="blog/hq-images-from-powerpoint-slides/">HQ Images from PowerPoint Slides</a></li>
+<li>Jul 12, 2013 - <a class="reference internal" href="blog/running-python-via-meze/">Running Python via Meze</a></li>
+<li>Jun 10, 2013 - <a class="reference internal" href="blog/meze-for-mezzanine/">Meze for Mezzanine</a></li>
 </ul>
 </div>
 </div>
@@ -95,12 +90,7 @@ packages that I developed for analysis, simulation, and visualization at
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<p class="logo">
-  <a href="#">
-    <img class="logo" src="_static/ahmet.jpg" alt="Logo"/>
-    
-  </a>
-</p>
+<h1 class="logo"><a href="#">Ahmet Bakan</a></h1>
 
 
 
@@ -268,11 +258,11 @@ packages that I developed for analysis, simulation, and visualization at
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/index.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

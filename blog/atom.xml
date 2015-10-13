@@ -5,7 +5,7 @@
   <updated>2013-11-11T00:00:00Z</updated>
   <link href="http://ahmetbakan.com" />
   <link href="http://ahmetbakan.com/blog/atom.xml" rel="self" />
-  <generator uri="http://ablog.readthedocs.org" version="0.7.1">ABlog</generator>
+  <generator uri="http://ablog.readthedocs.org" version="0.8.0">ABlog</generator>
   <entry xml:base="http://ahmetbakan.com/blog/atom.xml">
     <title type="text">Array Operations with Napi</title>
     <id>http://ahmetbakan.com/blog/array-operations-with-napi/</id>

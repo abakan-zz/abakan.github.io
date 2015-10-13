@@ -21,20 +21,23 @@ IPython directive
 To illustrate this, let's generate a sample of random numbers using
 :func:`~numpy.random.normal` function and make a histogram:
 
-.. ipython::
+.. code-block:: ipython
 
    In [1]: from pylab import *
 
-   In [1]: from numpy.random import normal
+   In [2]: from numpy.random import normal
 
-   In [1]: sample = normal(size=10000)
+   In [3]: sample = normal(size=10000)
 
-   In [1]: figure();
+   In [4]: figure();
 
-   In [1]: hist(sample);
+   In [5]: hist(sample);
 
-   @savefig sample_normal_distribution.png width=4in
-   In [1]: title('Normal Distribution (sample size = 10000)');
+   In [6]: title('Normal Distribution (sample size = 10000)');
+
+.. image:: /_static/sample_normal_distribution.png
+   :scale: 50 %
+   :align: center
 
 
 Here is the source for the example:
